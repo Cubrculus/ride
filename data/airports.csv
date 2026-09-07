@@ -1,0 +1,7 @@
+iata,name,city,lat,lon,service_type,daily_departures_approx,rideshare_demand,notes
+TPA,Tampa International Airport,Tampa,27.9755,-82.5332,major_hub,240,very_high,"Region's #1 volume. Westshore district next door is the densest hotel cluster between Orlando and Miami."
+PIE,St. Pete-Clearwater International Airport,Clearwater,27.9102,-82.6874,leisure_lcc,25,moderate,"Allegiant/Sun Country heavy. Bursty schedule; hotel cluster strung along Ulmerton Rd corridor."
+SRQ,Sarasota-Bradenton International Airport,Sarasota,27.3954,-82.5544,regional,60,high,"Growing fast. Hotels sit directly across University Pkwy; downtown Sarasota cluster is ~3 mi south."
+RSW,Southwest Florida International Airport,Fort Myers,26.5362,-81.7552,major_leisure,150,very_high,"Extremely seasonal (Jan-Apr peak). Airport is geographically isolated - no hotels inside 2 mi."
+PGD,Punta Gorda Airport,Punta Gorda,26.9202,-81.9905,ultra_lcc,8,low,"Allegiant-only. A handful of banks per day; demand is all-or-nothing around them."
+APF,Naples Municipal Airport,Naples,26.1526,-81.7753,general_aviation,0,very_low,"NO scheduled commercial airline service. Private/GA traffic uses car services, not rideshare. Value here is the downtown Naples hotel cluster, not the airfield."
