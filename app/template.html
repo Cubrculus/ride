@@ -1,0 +1,597 @@
+<title>Surge Pilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#EDF0EF; --surface:#FFFFFF; --surface-2:#F6F8F7;
+  --ink:#131E1D; --ink-2:#3D4C4A; --muted:#667573;
+  --line:#D6DCDA; --line-2:#C2CBC9;
+  --accent:#0B6E6E; --accent-ink:#FFFFFF;
+  --tier-a:#0E7C6B; --tier-a-bg:#DFF0EC;
+  --tier-b:#96660F; --tier-b-bg:#F6EBD4;
+  --tier-c:#66716F; --tier-c-bg:#E7EBEA;
+  --live:#B3401A; --live-bg:#FAE6DE;
+  --h0:#F6F8F7; --h1:#D5EAE5; --h2:#A9D6CC; --h3:#6DB9A9; --h4:#33917F; --h5:#0E6B5C; --h-mid-ink:#131E1D; --h-hi-ink:#FFFFFF;
+  --shadow:0 -1px 0 var(--line),0 -8px 24px rgba(19,30,29,.08);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0B1413; --surface:#131E1D; --surface-2:#182524;
+    --ink:#E4EBE9; --ink-2:#B3C0BE; --muted:#869593;
+    --line:#263533; --line-2:#33443F;
+    --accent:#43BFAE; --accent-ink:#0B1413;
+    --tier-a:#4CC6AF; --tier-a-bg:#123029;
+    --tier-b:#D6A644; --tier-b-bg:#2E2513;
+    --tier-c:#8A9694; --tier-c-bg:#1E2A28;
+    --live:#F08054; --live-bg:#33190F;
+    --h0:#182524; --h1:#153B34; --h2:#17564B; --h3:#1F7566; --h4:#2E9884; --h5:#4CC6AF; --h-mid-ink:#E4EBE9; --h-hi-ink:#0B1413;
+    --shadow:0 -1px 0 var(--line),0 -8px 24px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0B1413; --surface:#131E1D; --surface-2:#182524;
+  --ink:#E4EBE9; --ink-2:#B3C0BE; --muted:#869593;
+  --line:#263533; --line-2:#33443F;
+  --accent:#43BFAE; --accent-ink:#0B1413;
+  --tier-a:#4CC6AF; --tier-a-bg:#123029;
+  --tier-b:#D6A644; --tier-b-bg:#2E2513;
+  --tier-c:#8A9694; --tier-c-bg:#1E2A28;
+  --live:#F08054; --live-bg:#33190F;
+  --h0:#182524; --h1:#153B34; --h2:#17564B; --h3:#1F7566; --h4:#2E9884; --h5:#4CC6AF; --h-mid-ink:#E4EBE9; --h-hi-ink:#0B1413;
+  --shadow:0 -1px 0 var(--line),0 -8px 24px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--ground);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  font-size:15px;line-height:1.45;padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.lab{font-family:Archivo,sans-serif;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+
+/* ---- top bar ---- */
+.top{position:sticky;top:0;z-index:20;background:var(--ground);border-bottom:1px solid var(--line);
+  padding:10px 14px 10px;display:flex;flex-direction:column;gap:9px}
+.top-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{font-family:Archivo,sans-serif;font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1}
+.brand small{display:block;font-weight:500;font-size:10.5px;color:var(--muted);letter-spacing:.1em;
+  text-transform:uppercase;margin-top:3px;font-family:Archivo,sans-serif}
+.clock{text-align:right;line-height:1.05}
+.clock .t{font-size:22px;font-weight:600;letter-spacing:-.02em;display:block}
+.clock .l{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.search{display:flex;gap:6px;align-items:center}
+.search input{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line-2);border-radius:4px;
+  padding:11px 12px;font:inherit;font-size:16px;color:var(--ink)}
+.search input::placeholder{color:var(--muted)}
+.origin{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.chip{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 10px;
+  font-size:12px;font-weight:500;color:var(--ink-2);white-space:nowrap;transition:border-color .12s}
+.chip[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.chip.sm{padding:3px 8px;font-size:11px}
+.chip.go{background:var(--ink);color:var(--ground);border-color:var(--ink);font-weight:600}
+.origin .from{font-family:"IBM Plex Mono",monospace;color:var(--ink);font-size:12px}
+
+/* ---- panes ---- */
+.pane{display:none;padding:14px 14px 20px;max-width:760px;margin:0 auto;gap:14px;flex-direction:column}
+.pane.on{display:flex}
+.hint{font-size:12.5px;color:var(--muted);line-height:1.45;margin:0}
+.hint b{color:var(--ink-2);font-weight:600}
+.status{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.status .dot{width:6px;height:6px;border-radius:50%;background:var(--tier-c)}
+.status.ok .dot{background:var(--tier-a)}
+.status.warn .dot{background:var(--tier-b)}
+
+/* ---- ranked list ---- */
+.list{display:flex;flex-direction:column;gap:8px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:12px 13px;
+  display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:start;position:relative}
+.card.top{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.card .name{font-family:Archivo,sans-serif;font-weight:600;font-size:15px;line-height:1.25;margin:0;letter-spacing:-.01em}
+.card .sub{font-size:12px;color:var(--muted);margin:2px 0 0;font-family:"IBM Plex Mono",monospace}
+.card .why{font-size:12.5px;color:var(--ink-2);margin:6px 0 0;line-height:1.4}
+.card .why em{font-style:normal;color:var(--live);font-weight:500}
+.tier{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:3px;font-family:"IBM Plex Mono",monospace;
+  font-size:11px;font-weight:600;vertical-align:-4px;margin-right:6px}
+.tier.a{background:var(--tier-a-bg);color:var(--tier-a)} .tier.b{background:var(--tier-b-bg);color:var(--tier-b)} .tier.c{background:var(--tier-c-bg);color:var(--tier-c)}
+.score{text-align:right}
+.score .v{font-family:"IBM Plex Mono",monospace;font-size:24px;font-weight:600;line-height:1;display:block;letter-spacing:-.02em}
+.score .k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.score .d{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-2);display:block;margin-top:5px}
+.acts{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:7px 11px;font-size:12.5px;font-weight:600;
+  font-family:Archivo,sans-serif;letter-spacing:.02em;text-decoration:none;color:var(--ink);display:inline-flex;align-items:center;gap:5px}
+.btn.primary{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.btn.primary:hover{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.live{background:var(--live-bg);color:var(--live);border-color:var(--live)}
+.bar{height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden;grid-column:1/-1;display:flex;gap:2px}
+.bar i{display:block;height:100%}
+.bar .m{background:var(--tier-c)} .bar .o{background:var(--accent)}
+.empty{background:var(--surface);border:1px dashed var(--line-2);border-radius:5px;padding:24px;text-align:center;color:var(--muted);font-size:13.5px}
+
+/* ---- log pane ---- */
+.big{background:var(--live);color:#fff;border:0;border-radius:6px;padding:16px;width:100%;font-family:Archivo,sans-serif;
+  font-weight:700;font-size:18px;letter-spacing:-.01em;display:flex;align-items:center;justify-content:center;gap:10px}
+.big:hover{filter:brightness(1.07)}
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.sheet h3{margin:0;font-family:Archivo,sans-serif;font-size:14px;font-weight:600}
+.pick{display:flex;flex-direction:column;gap:4px;max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:4px}
+.pick button{text-align:left;background:var(--surface);border:0;border-bottom:1px solid var(--line);padding:9px 11px;font-size:13.5px;display:flex;justify-content:space-between;gap:8px}
+.pick button:last-child{border-bottom:0}
+.pick button[aria-pressed="true"]{background:var(--tier-a-bg);color:var(--tier-a);font-weight:600}
+.pick .d{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);flex-shrink:0}
+.levels{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.levels button{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:12px 4px;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:14px}
+.levels button[aria-pressed="true"]{background:var(--live-bg);border-color:var(--live);color:var(--live)}
+.levels button.none[aria-pressed="true"]{background:var(--tier-c-bg);border-color:var(--tier-c);color:var(--tier-c)}
+.levels small{display:block;font-size:9.5px;font-weight:400;color:var(--muted);font-family:"IBM Plex Sans",sans-serif;margin-top:2px}
+.row2{display:flex;gap:8px}
+.row2 .btn{flex:1;justify-content:center;padding:11px}
+.entries{display:flex;flex-direction:column;background:var(--line);gap:1px;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.entry{background:var(--surface);padding:9px 12px;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;font-size:13px}
+.entry .lv{font-family:"IBM Plex Mono",monospace;font-weight:600;min-width:38px;color:var(--live)}
+.entry .lv.z{color:var(--muted)}
+.entry .w{font-size:11.5px;color:var(--muted);font-family:"IBM Plex Mono",monospace}
+.entry .x{background:none;border:0;color:var(--muted);font-size:16px;padding:2px 6px;line-height:1}
+.entry .x:hover{color:var(--live)}
+
+/* ---- week pane ---- */
+.heat{background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:12px;overflow-x:auto}
+.heat table{border-collapse:separate;border-spacing:2px;width:100%}
+.heat th{font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:500;color:var(--muted);padding:2px;text-align:center}
+.heat th.d{text-align:left;padding-right:6px}
+.heat td{padding:0}
+.heat .cell{width:100%;border:0;border-radius:3px;padding:8px 0 6px;font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  font-weight:600;line-height:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink)}
+.heat .cell small{font-size:8.5px;font-weight:400;opacity:.8}
+.heat .cell.now{outline:2px solid var(--live);outline-offset:-1px}
+.heat .cell[aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:-1px}
+.heat .cell.l0{background:var(--h0);color:var(--muted)} .heat .cell.l1{background:var(--h1)} .heat .cell.l2{background:var(--h2)}
+.heat .cell.l3{background:var(--h3);color:var(--h-mid-ink)} .heat .cell.l4{background:var(--h4);color:var(--h-hi-ink)} .heat .cell.l5{background:var(--h5);color:var(--h-hi-ink)}
+.legend{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:18px;height:10px;border-radius:2px}
+.detail{background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:12px 13px;display:flex;flex-direction:column;gap:8px}
+.detail h3{margin:0;font-family:Archivo,sans-serif;font-size:14px;font-weight:600}
+.detail ol{margin:0;padding-left:20px;font-size:13.5px;display:flex;flex-direction:column;gap:5px}
+.detail li span{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);margin-left:6px}
+.apts{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ---- tab bar ---- */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);box-shadow:var(--shadow);
+  display:grid;grid-template-columns:repeat(3,1fr);padding-bottom:env(safe-area-inset-bottom)}
+.tabs button{background:none;border:0;padding:11px 4px 9px;font-family:Archivo,sans-serif;font-weight:600;font-size:12px;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px}
+.tabs button[aria-selected="true"]{color:var(--ink)}
+.tabs button[aria-selected="true"]::after{content:"";width:20px;height:2px;background:var(--accent);border-radius:1px}
+.tabs .n{font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:500;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%);
+  background:var(--ink);color:var(--ground);padding:9px 14px;border-radius:4px;font-size:13px;font-weight:500;z-index:40;
+  opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <div class="top-row">
+    <div class="brand">Surge Pilot<small>SW Florida airport hotels</small></div>
+    <div class="clock mono"><span class="t" id="clock">--:--</span><span class="l" id="clocklab">Eastern</span></div>
+  </div>
+  <div class="search" id="searchwrap">
+    <input id="q" type="search" placeholder="Search hotel, airport, or city" autocomplete="off" spellcheck="false" aria-label="Search spots">
+    <button class="chip go" id="gps" title="Use my GPS position">GPS</button>
+  </div>
+  <div class="origin">
+    <span>From</span><span class="from" id="fromlab">Home · Sarasota</span>
+    <button class="chip sm" id="home">Home</button>
+    <span style="margin-left:auto">Weight</span>
+    <button class="chip sm" data-mode="balanced" aria-pressed="true">Balanced</button>
+    <button class="chip sm" data-mode="nearest" aria-pressed="false">Nearest</button>
+    <button class="chip sm" data-mode="strongest" aria-pressed="false">Strongest</button>
+  </div>
+</header>
+
+<!-- NOW -->
+<section class="pane on" id="pane-now" role="tabpanel">
+  <div class="status" id="sync"><span class="dot"></span><span>Checking storage…</span></div>
+  <p class="hint" id="nowhint"></p>
+  <div class="list" id="ranked"></div>
+</section>
+
+<!-- LOG -->
+<section class="pane" id="pane-log" role="tabpanel">
+  <button class="big" id="bigsurge">&#9889; Log surge here</button>
+  <div class="sheet" id="sheet" hidden>
+    <h3>Where are you?</h3>
+    <div class="pick" id="pick"></div>
+    <h3>How strong?</h3>
+    <div class="levels" id="levels">
+      <button class="none" data-level="0" aria-pressed="false">none<small>flat</small></button>
+      <button data-level="1.2" aria-pressed="false">1.2×<small>light</small></button>
+      <button data-level="1.5" aria-pressed="false">1.5×<small>solid</small></button>
+      <button data-level="2" aria-pressed="false">2×<small>strong</small></button>
+      <button data-level="3" aria-pressed="false">3×+<small>heavy</small></button>
+    </div>
+    <div class="row2">
+      <button class="btn" id="cancel">Cancel</button>
+      <button class="btn primary" id="save" disabled>Save</button>
+    </div>
+  </div>
+  <p class="hint"><b>Log flat too.</b> A "none" at 06:00 Tuesday is as valuable as a 2× — it teaches the ranking where not to sit.
+     Entries are stamped with day-of-week and hour and feed the Now and Week views immediately.</p>
+  <div class="row2">
+    <span class="lab" style="align-self:center">Recent</span>
+    <button class="btn" id="export" style="flex:0;margin-left:auto">Export CSV</button>
+  </div>
+  <div class="entries" id="entries"></div>
+</section>
+
+<!-- WEEK -->
+<section class="pane" id="pane-week" role="tabpanel">
+  <div class="apts" id="wapts"></div>
+  <p class="hint">Each cell is the strongest spot for that two-hour band. Colour is demand strength; the code is which
+     airport zone wins. Day-of-week comes from the rotation plan's priors (business mornings Mon–Thu, weekend leisure
+     turnover, Naples dining Thu–Sat) until your own logs override them. Tap a cell for the top three.</p>
+  <div class="heat" id="heat"></div>
+  <div class="detail" id="wdetail" hidden></div>
+</section>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" data-pane="now">Now</button>
+  <button role="tab" aria-selected="false" data-pane="log">Log <span class="n" id="logn">0</span></button>
+  <button role="tab" aria-selected="false" data-pane="week">Week</button>
+</nav>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const DATA = /*__DATA__*/null;
+const A = DATA.airports, H = DATA.hotels;
+const HOME = {kind:"home", lat:27.3364, lon:-82.5307, label:"Home · Sarasota"};
+const TZ = "America/New_York";
+const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const TIER_W = {A:1.0, B:0.65, C:0.35};
+const MODE_D = {balanced:25, nearest:10, strongest:60};   // drive-minutes that halve a score
+const LEVEL_V = {0:0, 1.2:0.3, 1.5:0.55, 2:0.8, 3:1.0};
+
+const state = {
+  q:"", origin:{...HOME}, mode:"balanced", pane:"now",
+  log:[],                // all entries, merged
+  db:null, dl:null, dbIds:new Set(),
+  pick:null, level:null, weekApt:"ALL", weekCell:null, weekScrolled:false
+};
+try{
+  const o=JSON.parse(localStorage.getItem("sp-origin")||"null"); if(o&&o.lat) state.origin=o;
+  const m=localStorage.getItem("sp-mode"); if(m&&MODE_D[m]) state.mode=m;
+  const l=JSON.parse(localStorage.getItem("sp-log")||"[]"); if(Array.isArray(l)) state.log=l;
+}catch(e){}
+
+/* ---------- time ---------- */
+function nowParts(d=new Date()){
+  const p=new Intl.DateTimeFormat("en-US",{timeZone:TZ,weekday:"short",hour:"2-digit",minute:"2-digit",
+    hour12:false,year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(d);
+  const g=t=>p.find(x=>x.type===t).value;
+  let h=+g("hour"); if(h===24) h=0;
+  return {dow:DOW.indexOf(g("weekday")), hour:h, min:+g("minute"),
+          day:`${g("year")}-${g("month")}-${g("day")}`, month:+g("month")};
+}
+function windows(str){
+  const out=[];
+  (str||"").split(";").forEach(p=>{
+    const m=p.trim().match(/^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/); if(!m) return;
+    let s=+m[1]*60+ +m[2], e=+m[3]*60+ +m[4]; if(e<=s) e+=1440; out.push([s,e]);
+  });
+  return out;
+}
+function windowFit(h, mins){                 // 1 inside, .55 within an hour, .3 otherwise
+  let best=0.3;
+  for(const [s,e] of windows(h.best_windows)){
+    for(const m of [mins, mins+1440]){
+      if(m>=s&&m<e) return 1;
+      if((m>=s-60&&m<s)||(m>=e&&m<e+60)) best=Math.max(best,.55);
+    }
+  }
+  return best;
+}
+/* Day-of-week prior from plan/weekly-rotation.md. Business fields (TPA, PIE
+   business side) peak Mon-Thu mornings and Sun-evening fly-in; leisure fields
+   turn over on weekends; Naples is a Thu-Sat dining market. Multiplicative,
+   centred on 1.0, and overridden by observations as they accumulate. */
+function dowFactor(apt, dow, hour){
+  const wkend = dow===0||dow===6, morning = hour>=4&&hour<10, evening = hour>=17;
+  if(apt==="TPA"){
+    if(dow===0) return evening?1.15:0.75;                 // Sunday fly-in
+    if(dow===6) return 0.8;
+    if(dow===5) return morning?1.0:1.1;                    // Friday leisure evening
+    return morning?1.15:1.0;                               // Mon-Thu business
+  }
+  if(apt==="PIE"||apt==="PGD"||apt==="RSW") return wkend?1.15 : (dow===5?1.1 : (dow===2||dow===3?0.85:1.0));
+  if(apt==="APF") return (dow>=4&&evening)?1.2 : (dow===1||dow===2?0.85:1.0);
+  if(apt==="SRQ") return wkend?1.1 : (dow===5?1.05:1.0);
+  return 1;
+}
+function season(apt, month){
+  const south = apt==="RSW"||apt==="APF"||apt==="PGD"||apt==="SRQ";
+  if(!south) return (month>=6&&month<=9)?0.95:1;
+  if(month>=1&&month<=4) return 1;
+  if(month===5||month>=11) return 0.8;
+  return 0.55;
+}
+
+/* ---------- geo ---------- */
+function hav(a,b){
+  const R=3958.8, r=x=>x*Math.PI/180;
+  const dLat=r(b.lat-a.lat), dLon=r(b.lon-a.lon);
+  const s=Math.sin(dLat/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s));
+}
+function driveMin(from,to){
+  const mi=hav(from,to)*1.25;
+  if(mi<15) return Math.round(mi/28*60+3);
+  return Math.round(15/28*60+(mi-15)/58*60+3);
+}
+
+/* ---------- scoring ---------- */
+function observed(spotId, dow, hour, nowMs){
+  let num=0, den=0;
+  for(const e of state.log){
+    if(e.spot!==spotId) continue;
+    let w=0;
+    const dh=Math.min(Math.abs(e.hour-hour), 24-Math.abs(e.hour-hour));
+    if(e.dow===dow){ if(dh===0) w=1; else if(dh===1) w=.5; }
+    else if(dh===0) w=.25;
+    if(!w) continue;
+    const age=(nowMs-Date.parse(e.ts))/864e5;
+    w*=Math.pow(.5, Math.max(0,age)/45);
+    num+=w*(LEVEL_V[e.level]??0); den+=w;
+  }
+  return den? {v:num/den, n:den} : {v:0, n:0};
+}
+function demandAt(h, dow, hour, min, month, nowMs){
+  const model = Math.min(1, TIER_W[h.surge_tier]*(0.4+0.6*windowFit(h,hour*60+min))*season(h.airport,month)*dowFactor(h.airport,dow,hour));
+  const ob = observed(h.id, dow, hour, nowMs);
+  const w = ob.n/(ob.n+2);
+  return {model, ob:ob.v, n:ob.n, w, demand:(1-w)*model+w*ob.v};
+}
+function rank(){
+  const t=nowParts(), nowMs=Date.now();
+  const q=state.q.trim().toLowerCase();
+  return H.filter(h=>!q || [h.name,h.airport,h.city,h.address].join(" ").toLowerCase().includes(q))
+    .map(h=>{
+      const d=demandAt(h,t.dow,t.hour,t.min,t.month,nowMs);
+      const dm=driveMin(state.origin,h);
+      const df=1/(1+dm/MODE_D[state.mode]);
+      return {...h, ...d, driveMin:dm, score:d.demand*df, live:windowFit(h,t.hour*60+t.min)===1};
+    }).sort((a,b)=>b.score-a.score);
+}
+
+/* ---------- render: NOW ---------- */
+function renderNow(){
+  const rs=rank();
+  const t=nowParts();
+  const inWin=H.filter(h=>windowFit(h,t.hour*60+t.min)===1).length;
+  document.getElementById("nowhint").innerHTML = state.log.length
+    ? `<b>${state.log.length} logged.</b> Ranking blends your observations at this day and hour with the structural model, then discounts by drive time from ${state.origin.label}.`
+    : `<b>No logs yet — showing the model.</b> ${inWin} spots are inside a listed window right now. Tap <b>Log</b> the first time you see surge; the ranking starts learning immediately.`;
+  const list=document.getElementById("ranked");
+  if(!rs.length){ list.innerHTML=`<div class="empty">Nothing matches "${state.q}".</div>`; return; }
+  list.innerHTML=rs.slice(0,25).map((h,i)=>{
+    const tier=h.surge_tier.toLowerCase();
+    const why=[];
+    if(h.n>0) why.push(`<em>${h.n.toFixed(1)} obs</em> at ${DOW[t.dow]} ${String(t.hour).padStart(2,"0")}h → ${Math.round(h.ob*100)}`);
+    why.push(h.live?"in window":"outside window");
+    if(h.shuttle==="none") why.push("no shuttle");
+    else if(h.shuttle==="limited_hours") why.push("shuttle gaps");
+    const s=season(h.airport,t.month); if(s<1) why.push(`season ×${s}`);
+    const pm=Math.round(h.model*100), po=Math.round(h.ob*100), w=h.w;
+    return `<article class="card${i===0?" top":""}" data-id="${h.id}">
+      <div>
+        <h4 class="name"><span class="tier ${tier}">${h.surge_tier}</span>${h.name}</h4>
+        <p class="sub">${h.airport} · ${h.dist_mi.toFixed(1)} mi from field · ~${h.rooms_approx} rm</p>
+        <p class="why">${why.join(" · ")}</p>
+      </div>
+      <div class="score">
+        <span class="v">${Math.round(h.score*100)}</span><span class="k">score</span>
+        <span class="d">${h.driveMin} min drive</span>
+      </div>
+      <div class="bar" title="model ${pm} · observed ${po} (weight ${Math.round(w*100)}%)">
+        <i class="m" style="width:${(1-w)*pm}%"></i><i class="o" style="width:${w*po}%"></i>
+      </div>
+      <div class="acts">
+        <a class="btn primary" href="${h.nav}" target="_blank" rel="noopener">Navigate</a>
+        <button class="btn live" data-act="log" data-id="${h.id}">&#9889; Surge here</button>
+        <button class="btn" data-act="here" data-id="${h.id}">I'm here</button>
+      </div>
+    </article>`;
+  }).join("");
+}
+
+/* ---------- render: LOG ---------- */
+function nearestSpots(){
+  return H.map(h=>({...h, dm:driveMin(state.origin,h)})).sort((a,b)=>a.dm-b.dm);
+}
+function openSheet(prefId){
+  state.pick = prefId || nearestSpots()[0].id; state.level=null;
+  const pick=document.getElementById("pick");
+  pick.innerHTML=nearestSpots().slice(0,40).map(h=>
+    `<button data-spot="${h.id}" aria-pressed="${h.id===state.pick}"><span>${h.name}</span><span class="d">${h.airport} · ${h.dm}m</span></button>`).join("");
+  document.querySelectorAll("#levels button").forEach(b=>b.setAttribute("aria-pressed","false"));
+  document.getElementById("save").disabled=true;
+  document.getElementById("sheet").hidden=false;
+  document.getElementById("bigsurge").hidden=true;
+  pick.querySelector('[aria-pressed="true"]')?.scrollIntoView({block:"nearest"});
+}
+function closeSheet(){ document.getElementById("sheet").hidden=true; document.getElementById("bigsurge").hidden=false; }
+function fmtWhen(e){ return `${DOW[e.dow]} ${String(e.hour).padStart(2,"0")}:${String(e.min).padStart(2,"0")}`; }
+function renderLog(){
+  document.getElementById("logn").textContent=state.log.length;
+  const el=document.getElementById("entries");
+  const sorted=[...state.log].sort((a,b)=>b.ts.localeCompare(a.ts));
+  el.innerHTML = sorted.length ? sorted.slice(0,60).map(e=>{
+    const h=H.find(x=>x.id===e.spot);
+    return `<div class="entry">
+      <span class="lv${e.level?"":" z"}">${e.level?e.level+"×":"flat"}</span>
+      <span>${h?h.name:e.spot}<br><span class="w">${fmtWhen(e)} · ${e.day}${state.dbIds.has(e.id)?"":" · local"}</span></span>
+      <button class="x" data-del="${e.id}" title="Delete">&times;</button></div>`;
+  }).join("") : `<div class="empty" style="border:0">No observations yet.</div>`;
+}
+
+/* ---------- render: WEEK ---------- */
+function renderWeek(){
+  const t=nowParts(), nowMs=Date.now();
+  const pool = state.weekApt==="ALL" ? H : H.filter(h=>h.airport===state.weekApt);
+  document.getElementById("wapts").innerHTML = ["ALL",...A.map(a=>a.iata)].map(c=>
+    `<button class="chip" data-wapt="${c}" aria-pressed="${c===state.weekApt}">${c==="ALL"?"All zones":c}</button>`).join("");
+  const bands=[...Array(12).keys()];
+  const days=[1,2,3,4,5,6,0];
+  const grid={};
+  let rows="";
+  for(const b of bands){ const hour=b*2;
+    rows+=`<tr><th class="d">${String(hour).padStart(2,"0")}</th>`;
+    for(const dow of days){
+      const scored=pool.map(h=>({h, s:(demandAt(h,dow,hour,0,t.month,nowMs).demand+demandAt(h,dow,hour+1,0,t.month,nowMs).demand)/2}))
+        .sort((x,y)=>y.s-x.s);
+      grid[`${dow}-${b}`]=scored.slice(0,3);
+      const top=scored[0]; const lvl=Math.min(5,Math.floor(top.s*5.99));
+      const isNow = dow===t.dow && Math.floor(t.hour/2)===b;
+      const sel = state.weekCell===`${dow}-${b}`;
+      rows+=`<td><button class="cell l${lvl}${isNow?" now":""}" data-cell="${dow}-${b}" aria-pressed="${sel}"
+        title="${top.h.name} · ${Math.round(top.s*100)}">${top.h.airport}<small>${Math.round(top.s*100)}</small></button></td>`;
+    }
+    rows+="</tr>";
+  }
+  document.getElementById("heat").innerHTML=`<table><thead><tr><th></th>${days.map(d=>`<th>${DOW[d]}</th>`).join("")}</tr></thead>
+    <tbody>${rows}</tbody></table>
+    <div class="legend">Demand <i style="background:var(--h0)"></i><i style="background:var(--h1)"></i><i style="background:var(--h2)"></i><i style="background:var(--h3)"></i><i style="background:var(--h4)"></i><i style="background:var(--h5)"></i> strong · outlined = now</div>`;
+  if(!state.weekScrolled){ state.weekScrolled=true; document.querySelector(".heat .cell.now")?.scrollIntoView({block:"center"}); }
+  const det=document.getElementById("wdetail");
+  if(state.weekCell && grid[state.weekCell]){
+    const [dow,b]=state.weekCell.split("-").map(Number);
+    det.hidden=false;
+    det.innerHTML=`<h3>${DOW[dow]} ${String(b*2).padStart(2,"0")}:00–${String(b*2+2).padStart(2,"0")}:00</h3>
+      <ol>${grid[state.weekCell].map(x=>`<li>${x.h.name}<span>${x.h.airport} · ${Math.round(x.s*100)} · ${driveMin(HOME,x.h)} min from home</span></li>`).join("")}</ol>`;
+  } else det.hidden=true;
+}
+
+/* ---------- persistence ---------- */
+function saveLocal(){ try{localStorage.setItem("sp-log",JSON.stringify(state.log));}catch(e){} }
+function setSync(cls,msg){ const s=document.getElementById("sync"); s.className="status "+cls; s.lastElementChild.textContent=msg; }
+async function dbWriteDay(day){
+  if(!state.db) return;
+  const ref=state.db.doc("logs/"+day);
+  const entries=state.log.filter(e=>e.day===day);
+  await ref.set({day, entries, updated:new Date().toISOString()});
+  entries.forEach(e=>state.dbIds.add(e.id));
+}
+async function addEntry(spotId, level){
+  const t=nowParts();
+  const e={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6), ts:new Date().toISOString(),
+           spot:spotId, level, dow:t.dow, hour:t.hour, min:t.min, day:t.day,
+           lat:state.origin.kind==="gps"?state.origin.lat:null, lon:state.origin.kind==="gps"?state.origin.lon:null};
+  state.log.push(e); saveLocal(); renderAll();
+  try{ await dbWriteDay(e.day); renderLog(); }
+  catch(err){ setSync("warn", err.code==="quota_exceeded"?"Storage full — kept on this device only":"Saved on this device; sync pending"); }
+  toast(`Logged ${level?level+"×":"flat"} at ${H.find(h=>h.id===spotId).name}`);
+}
+async function delEntry(id){
+  const e=state.log.find(x=>x.id===id); if(!e) return;
+  state.log=state.log.filter(x=>x.id!==id); saveLocal(); renderAll();
+  try{ await dbWriteDay(e.day); }catch(err){}
+}
+async function initDb(){
+  if(!window.claude || typeof window.claude.use!=="function"){ setSync("warn","This device only — open in Claude to sync across devices"); return; }
+  let db=null;
+  try{ db=await window.claude.use("db"); }catch(e){}
+  if(!db){ setSync("warn","This device only — sync unavailable in this view"); return; }
+  state.db=db;
+  db.collection("logs").onSnapshot(snap=>{
+    const remote=[]; snap.docs.forEach(d=>{ const b=d.data(); if(b&&Array.isArray(b.entries)) remote.push(...b.entries); });
+    const byId=new Map(state.log.map(e=>[e.id,e]));
+    remote.forEach(e=>{ byId.set(e.id,e); state.dbIds.add(e.id); });
+    state.log=[...byId.values()]; saveLocal();
+    setSync("ok",`Synced · ${state.log.length} observations`);
+    renderAll();
+    // push anything that only exists locally (first snapshot after an offline session)
+    if(!snap.metadata.fromCache){
+      const days=new Set(state.log.filter(e=>!state.dbIds.has(e.id)).map(e=>e.day));
+      days.forEach(d=>dbWriteDay(d).catch(()=>{}));
+    }
+  }, err=>{ setSync("warn","Sync lost — entries kept on this device"); });
+  try{ state.dl=await window.claude.use("downloads"); }catch(e){}
+  if(!state.dl) document.getElementById("export").hidden=true;
+}
+
+/* ---------- export ---------- */
+async function exportCsv(){
+  const rows=[["id","ts_utc","day","dow","hour","min","spot_id","spot_name","airport","level","lat","lon"]];
+  [...state.log].sort((a,b)=>a.ts.localeCompare(b.ts)).forEach(e=>{
+    const h=H.find(x=>x.id===e.spot)||{};
+    rows.push([e.id,e.ts,e.day,DOW[e.dow],e.hour,e.min,e.spot,h.name||"",h.airport||"",e.level,e.lat??"",e.lon??""]);
+  });
+  const csv=rows.map(r=>r.map(v=>/[",\n]/.test(String(v))?`"${String(v).replace(/"/g,'""')}"`:v).join(",")).join("\n");
+  if(state.dl){
+    try{ await state.dl.save({filename:`surge-log-${nowParts().day}.csv`, data:csv}); toast("Exported"); }
+    catch(err){ if(err.code!=="declined") toast("Export unavailable here"); }
+  } else toast("Export needs the Claude viewer");
+}
+
+/* ---------- misc ---------- */
+let toastT; function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("on"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("on"),2200); }
+function setOrigin(o){ state.origin=o; try{localStorage.setItem("sp-origin",JSON.stringify(o));}catch(e){} document.getElementById("fromlab").textContent=o.label; renderNow(); }
+function renderAll(){ renderNow(); renderLog(); if(state.pane==="week") renderWeek(); }
+function tick(){
+  const p=nowParts();
+  document.getElementById("clock").textContent=`${String(p.hour).padStart(2,"0")}:${String(p.min).padStart(2,"0")}`;
+  document.getElementById("clocklab").textContent=`${DOW[p.dow]} · Eastern`;
+}
+
+/* ---------- wire ---------- */
+document.getElementById("q").addEventListener("input",e=>{ state.q=e.target.value; renderNow(); });
+document.getElementById("home").addEventListener("click",()=>setOrigin({...HOME}));
+document.getElementById("gps").addEventListener("click",()=>{
+  if(!navigator.geolocation){ toast("GPS not available in this view — use \"I'm here\" on a spot"); return; }
+  toast("Locating…");
+  navigator.geolocation.getCurrentPosition(p=>{
+    setOrigin({kind:"gps",lat:p.coords.latitude,lon:p.coords.longitude,label:"GPS position"});
+    toast("Using GPS position");
+  },()=>toast("GPS blocked here — tap \"I'm here\" on the nearest spot instead"),{enableHighAccuracy:true,timeout:8000,maximumAge:60000});
+});
+document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{
+  state.mode=b.dataset.mode; try{localStorage.setItem("sp-mode",state.mode);}catch(e){}
+  document.querySelectorAll("[data-mode]").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); renderNow();
+}));
+document.getElementById("ranked").addEventListener("click",e=>{
+  const b=e.target.closest("[data-act]"); if(!b) return;
+  const h=H.find(x=>x.id===b.dataset.id);
+  if(b.dataset.act==="here"){ setOrigin({kind:"spot",lat:h.lat,lon:h.lon,label:h.name}); toast(`From ${h.name}`); }
+  if(b.dataset.act==="log"){ showPane("log"); openSheet(h.id); }
+});
+document.getElementById("bigsurge").addEventListener("click",()=>openSheet());
+document.getElementById("cancel").addEventListener("click",closeSheet);
+document.getElementById("pick").addEventListener("click",e=>{
+  const b=e.target.closest("[data-spot]"); if(!b) return;
+  state.pick=b.dataset.spot; document.querySelectorAll("#pick button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+});
+document.getElementById("levels").addEventListener("click",e=>{
+  const b=e.target.closest("[data-level]"); if(!b) return;
+  state.level=+b.dataset.level; document.querySelectorAll("#levels button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+  document.getElementById("save").disabled=false;
+});
+document.getElementById("save").addEventListener("click",()=>{ if(state.level===null||!state.pick) return; addEntry(state.pick,state.level); closeSheet(); });
+document.getElementById("entries").addEventListener("click",e=>{ const b=e.target.closest("[data-del]"); if(b) delEntry(b.dataset.del); });
+document.getElementById("export").addEventListener("click",exportCsv);
+document.getElementById("wapts").addEventListener("click",e=>{ const b=e.target.closest("[data-wapt]"); if(!b) return; state.weekApt=b.dataset.wapt; state.weekCell=null; renderWeek(); });
+document.getElementById("heat").addEventListener("click",e=>{ const b=e.target.closest("[data-cell]"); if(!b) return; state.weekCell=state.weekCell===b.dataset.cell?null:b.dataset.cell; renderWeek(); });
+function showPane(p){
+  state.pane=p;
+  document.querySelectorAll(".pane").forEach(x=>x.classList.toggle("on",x.id==="pane-"+p));
+  document.querySelectorAll(".tabs [data-pane]").forEach(x=>x.setAttribute("aria-selected",String(x.dataset.pane===p)));
+  document.getElementById("searchwrap").style.display = p==="now"?"":"none";
+  if(p==="week") renderWeek();
+  window.scrollTo({top:0});
+}
+document.querySelectorAll(".tabs [data-pane]").forEach(b=>b.addEventListener("click",()=>showPane(b.dataset.pane)));
+
+document.getElementById("fromlab").textContent=state.origin.label;
+document.querySelectorAll("[data-mode]").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.mode===state.mode)));
+tick(); renderAll(); initDb();
+setInterval(()=>{ tick(); renderNow(); }, 60000);
+</script>

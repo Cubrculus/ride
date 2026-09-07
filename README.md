@@ -12,8 +12,23 @@ covering the I-75 corridor from Tampa to Naples.
 | `data/hotels.json` | Generated. Same data plus resolved navigation links |
 | `map/template.html` | The map's source (edit this, not `index.html`) |
 | `map/index.html` | Generated. Self-contained interactive map |
+| `app/template.html` | **Surge Pilot** source — search, live ranking, quick-tap surge log, week heatmap |
+| `app/index.html` | Generated. Self-contained app; works as a Claude artifact or hosted anywhere |
 | `plan/weekly-rotation.md` | Zone geography, demand clocks, seasonality, and a 4-week ramp |
 | `scripts/build.py` | Validates the CSVs and regenerates the JSON + map |
+
+## Surge Pilot (the app)
+
+`app/index.html` is the on-the-road tool. Search or use GPS, get a ranked list of
+where to sit right now, tap **Surge here** when you see one, and the ranking learns
+your weekday-hour patterns. The Week tab shows the strongest zone per two-hour band
+across the week. Scoring is documented at the end of `plan/weekly-rotation.md`.
+
+Storage: inside the Claude viewer, logs sync through the artifact's database
+(one document per day in `logs/`). Everywhere else — hosted on GitHub Pages, opened
+as a file — they persist in the browser's localStorage only. Both paths are always
+written, so a device that later opens the artifact pushes its local entries up.
+**Export CSV** (Claude viewer only) backs the log up to a file.
 
 ## Regenerating
 

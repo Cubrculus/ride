@@ -70,14 +70,18 @@ def main():
     payload = {"airports": airports, "hotels": hotels}
     (ROOT / "data" / "hotels.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
-    tpl = (ROOT / "map" / "template.html").read_text(encoding="utf-8")
-    if "/*__DATA__*/null" not in tpl:
-        print("ERROR: template.html is missing the /*__DATA__*/null marker", file=sys.stderr)
-        return 1
     # Guard against a "</script>" inside data prematurely closing the tag.
     blob = json.dumps(payload, separators=(",", ":")).replace("</", "<\\/")
-    (ROOT / "map" / "index.html").write_text(
-        tpl.replace("/*__DATA__*/null", blob), encoding="utf-8")
+    for page in ("map", "app"):
+        tpl_path = ROOT / page / "template.html"
+        if not tpl_path.exists():
+            continue
+        tpl = tpl_path.read_text(encoding="utf-8")
+        if "/*__DATA__*/null" not in tpl:
+            print(f"ERROR: {page}/template.html is missing the /*__DATA__*/null marker", file=sys.stderr)
+            return 1
+        (ROOT / page / "index.html").write_text(tpl.replace("/*__DATA__*/null", blob), encoding="utf-8")
+        print(f"  rendered {page}/index.html")
 
     print(f"OK: {len(hotels)} hotels across {len(airports)} airports")
     for code in [a["iata"] for a in airports]:

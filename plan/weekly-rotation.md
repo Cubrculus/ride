@@ -144,3 +144,28 @@ Log what actually happens. The A/B/C tiers here are **inferred from structural
 proxies** (room count, shuttle coverage, service class, distance), not from observed
 surge data. Add a column for your own observed results and promote or demote spots
 after a few weeks. Your log will beat this model quickly — that is the intent.
+
+## How the app scores "where to go now"
+
+`app/index.html` (Surge Pilot) turns this plan into a live ranking. For every spot
+it computes:
+
+```
+model    = tier weight × window fit × season × day-of-week prior      (0–1)
+observed = your logged surge levels at this spot, same weekday ±1 h,
+           recency-decayed (half-life 45 days)                         (0–1)
+demand   = blend of the two, weighted by how many observations exist
+score    = demand ÷ (1 + drive minutes ÷ D)      D = 25 balanced, 10 nearest, 60 strongest
+```
+
+| Input | Where it comes from |
+|---|---|
+| Tier weight | A = 1.0, B = 0.65, C = 0.35, from `data/hotels.csv` |
+| Window fit | 1.0 inside a listed window, 0.55 within an hour of one, 0.3 otherwise |
+| Season | South of Tampa: 1.0 Jan–Apr, 0.8 shoulder, 0.55 Jun–Oct. Tampa Bay: ~1.0 year-round |
+| Day-of-week prior | The tables above, encoded: TPA business mornings Mon–Thu ×1.15 and Sunday fly-in evening ×1.15; leisure fields (PIE, RSW, PGD) weekends ×1.15; Naples Thu–Sat evenings ×1.2; midweek dips ×0.85 |
+| Observations | Every quick-tap log: level (flat / 1.2× / 1.5× / 2× / 3×+), weekday, hour, spot |
+
+Two observations at a given weekday-hour already outweigh the model at that slot
+(weight = n ÷ (n + 2)). Log flat readings too — a "none" teaches the ranking where
+*not* to sit, which is half the edge.
