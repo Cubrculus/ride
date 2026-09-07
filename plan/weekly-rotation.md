@@ -169,3 +169,38 @@ score    = demand ÷ (1 + drive minutes ÷ D)      D = 25 balanced, 10 nearest, 
 Two observations at a given weekday-hour already outweigh the model at that slot
 (weight = n ÷ (n + 2)). Log flat readings too — a "none" teaches the ranking where
 *not* to sit, which is half the edge.
+
+## Optional: real flight-bank data via Gemini
+
+The scoring above uses a hand-written day-of-week prior (`dowFactor` in
+`app/template.html`) because no public source publishes rideshare surge, and
+generic 04:00–10:00 / 17:00–23:00 windows stand in for "morning" and
+"evening" everywhere. `scripts/fetch_signals.py` replaces that generic
+assumption with each airport's **real** departure/arrival bank times, fetched
+via the Gemini API with Google Search grounding — this is the one part of
+the system genuinely built from live external data, and it is scoped to
+exactly what a search engine can actually verify: published flight
+schedules, not surge.
+
+```
+export GEMINI_API_KEY=...        # free key: https://aistudio.google.com/apikey
+python3 scripts/fetch_signals.py
+python3 scripts/build.py         # folds data/signals.json into the app
+```
+
+A `.github/workflows/fetch-signals.yml` Action refreshes it daily once a
+`GEMINI_API_KEY` repository secret is set and the workflow lives on the
+default branch (GitHub only fires scheduled workflows there — use "Run
+workflow" to test on any branch first).
+
+This is strictly additive: with no `data/signals.json`, or one that's
+missing an airport, that airport keeps using the generic model exactly as
+before — nothing regresses. Where a real signal exists, the app's banner
+tags the row **flight bank** with the fetch date and Gemini's own stated
+confidence, so a real schedule is always visibly distinguished from the
+generic assumption underneath it.
+
+Entries older than 45 days are dropped automatically rather than trusted
+stale (`prune_stale` in the fetch script) — flight schedules do shift
+seasonally, so this needs re-running periodically, which is what the daily
+Action is for.

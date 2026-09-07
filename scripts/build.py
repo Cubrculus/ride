@@ -11,6 +11,29 @@ def load(name):
     with open(ROOT / "data" / name, newline="", encoding="utf-8") as fh:
         return list(csv.DictReader(fh))
 
+def load_signals():
+    """data/signals.json is optional and only ever additive: absent, empty, or
+    malformed all fall back to the app's built-in generic day-of-week model
+    (app/template.html: dowFactor / MORNING / EVENING) with zero change in
+    behavior. Populate it with `python3 scripts/fetch_signals.py`."""
+    path = ROOT / "data" / "signals.json"
+    if not path.exists():
+        return None
+    try:
+        doc = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        print(f"  WARNING: data/signals.json is not valid JSON ({e}); ignoring", file=sys.stderr)
+        return None
+    airports = doc.get("airports")
+    if not isinstance(airports, dict) or not airports:
+        print("  WARNING: data/signals.json has no usable airports; ignoring", file=sys.stderr)
+        return None
+    return {
+        "generated_at": doc.get("generated_at"),
+        "model": doc.get("model"),
+        "airports": airports,
+    }
+
 def nav_url(name, city):
     """Navigate by NAME + city, not by our stored street address.
 
@@ -24,6 +47,7 @@ def nav_url(name, city):
 def main():
     airports = load("airports.csv")
     hotels = load("hotels.csv")
+    signals = load_signals()
     codes = {a["iata"] for a in airports}
     errs = []
     seen = set()
@@ -68,6 +92,8 @@ def main():
         a["daily_departures_approx"] = int(a["daily_departures_approx"])
 
     payload = {"airports": airports, "hotels": hotels}
+    if signals:
+        payload["signals"] = signals
     (ROOT / "data" / "hotels.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
     # Guard against a "</script>" inside data prematurely closing the tag.
@@ -83,6 +109,12 @@ def main():
         (ROOT / page / "index.html").write_text(tpl.replace("/*__DATA__*/null", blob), encoding="utf-8")
         print(f"  rendered {page}/index.html")
 
+    if signals:
+        print(f"  signals: {len(signals['airports'])} airport(s) with live flight-bank data "
+              f"(fetched {signals.get('generated_at','?')})")
+    else:
+        print("  signals: none — using the built-in generic day-of-week model "
+              "(run scripts/fetch_signals.py to add real flight-bank data)")
     print(f"OK: {len(hotels)} hotels across {len(airports)} airports")
     for code in [a["iata"] for a in airports]:
         sub = [h for h in hotels if h["airport"] == code]

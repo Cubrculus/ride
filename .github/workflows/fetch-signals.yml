@@ -1,0 +1,59 @@
+name: Refresh flight-bank signals
+
+# Pulls real per-airport flight-bank windows via the Gemini API (with Google
+# Search grounding) and rebuilds the app. Requires a GEMINI_API_KEY repository
+# secret — create one free at https://aistudio.google.com/apikey, then add it
+# under Settings -> Secrets and variables -> Actions -> New repository secret.
+#
+# Scheduled workflows only fire from the repository's default branch on
+# GitHub, so the cron below is inert until this workflow lives on that
+# branch. Use "Run workflow" (workflow_dispatch) to test it on any branch,
+# including this one, once the secret is set.
+#
+# Safe with no secret set: the job fails fast with a clear message and
+# nothing is committed. Safe with a working key: fetch_signals.py only ever
+# ADDS to the app's generic day-of-week model — see scripts/fetch_signals.py
+# and the "signals" section of plan/weekly-rotation.md.
+
+on:
+  schedule:
+    - cron: "0 11 * * *"   # ~07:00 US Eastern; flight schedules don't change intraday
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch flight-bank signals
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "::error::GEMINI_API_KEY secret is not set. See the comment at the top of this workflow file."
+            exit 1
+          fi
+          python3 scripts/fetch_signals.py
+
+      - name: Rebuild app and map
+        run: python3 scripts/build.py
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/signals.json data/hotels.json app/index.html map/index.html
+          if git diff --cached --quiet; then
+            echo "No change in flight-bank signals."
+          else
+            git commit -m "Refresh flight-bank signals (automated)"
+            git push
+          fi
